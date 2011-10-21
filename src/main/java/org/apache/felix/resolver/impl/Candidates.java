@@ -492,7 +492,8 @@ class Candidates
                         // host actually provides it in its resolved capabilities,
                         // since it may be a substitutable export.
                         if (!fragCand.getNamespace().equals(ResourceConstants.WIRING_PACKAGE_NAMESPACE)
-                            || wire.getProviderWiring().getResourceCapabilities(null).contains(fragCand))
+                            || env.getWirings().get(wire.getProvider())
+                                .getResourceCapabilities(null).contains(fragCand))
                         {
                             // Note that we can just add this as a candidate
                             // directly, since we know it is already resolved.

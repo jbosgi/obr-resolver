@@ -27,24 +27,24 @@ import org.osgi.framework.resource.Wiring;
 
 class WireImpl implements Wire
 {
-    private final Wiring m_requirerWiring;
+    private final Resource m_requirer;
     private final Requirement m_req;
-    private final Wiring m_providerWiring;
+    private final Resource m_provider;
     private final Capability m_cap;
 
     public WireImpl(
         Resource requirer, Requirement req,
         Resource provider, Capability cap)
     {
-        m_requirerWiring = new WiringImpl(requirer);
+        m_requirer = requirer;
         m_req = req;
-        m_providerWiring = new WiringImpl(provider);
+        m_provider = provider;
         m_cap = cap;
     }
 
-    public Wiring getRequirerWiring()
+    public Resource getRequirer()
     {
-        return m_requirerWiring;
+        return m_requirer;
     }
 
     public Requirement getRequirement()
@@ -52,9 +52,9 @@ class WireImpl implements Wire
         return m_req;
     }
 
-    public Wiring getProviderWiring()
+    public Resource getProvider()
     {
-        return m_providerWiring;
+        return m_provider;
     }
 
     public Capability getCapability()
@@ -67,41 +67,6 @@ class WireImpl implements Wire
     {
         return m_req
             + " -> "
-            + "[" + m_providerWiring.getResource() + "]";
-    }
-
-    class WiringImpl implements Wiring
-    {
-        private final Resource m_resource;
-
-        WiringImpl(Resource resource)
-        {
-            m_resource = resource;
-        }
-
-        public List<Capability> getResourceCapabilities(String namespace)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public List<Requirement> getResourceRequirements(String namespace)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public List<Wire> getProvidedResourceWires(String namespace)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public List<Wire> getRequiredResourceWires(String namespace)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public Resource getResource()
-        {
-            return m_resource;
-        }
+            + "[" + m_provider + "]";
     }
 }

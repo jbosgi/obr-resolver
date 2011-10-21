@@ -18,11 +18,11 @@ package org.osgi.service.resolver;
 
 import java.util.Collection;
 import java.util.Map;
+
 import java.util.SortedSet;
 import org.osgi.framework.resource.Capability;
 import org.osgi.framework.resource.Requirement;
 import org.osgi.framework.resource.Resource;
-import org.osgi.framework.resource.Wire;
 import org.osgi.framework.resource.Wiring;
 
 /**
@@ -36,9 +36,9 @@ import org.osgi.framework.resource.Wiring;
  * to satisfy {@link Requirement requirements} via the
  * {@link #findProviders(Requirement)} method</li>
  *
- * <li>Constrain solutions via the {@link #getWiring()} method. A wiring
- * consists of a map of existing {@link Resource resources} to {@link Wire
- * wires}.
+ * <li>Constrain solutions via the {@link #getWirings()} method. This provides
+ * a map to link existing resolved {@link Resource resources} to their {@link Wiring
+ * wirings}.
  *
  * <li>Filter transitive requirements that are brought in as part of a resolve
  * operation via the {@link #isEffective(Requirement)}.
@@ -50,7 +50,7 @@ import org.osgi.framework.resource.Wiring;
  *
  * <p>
  * A resolver may call the {@link #findProviders(Requirement)},
- * {@link #isEffective(Requirement)} and {@link #getWiring()} method any number of
+ * {@link #isEffective(Requirement)} and {@link #getWirings()} method any number of
  * times during a resolve using any thread. Environments may also be shared
  * between several resolvers. As such implementors should ensure that this class
  * is properly synchronized.
@@ -96,11 +96,11 @@ public interface Environment {
    */
   boolean isEffective(Requirement requirement);
 
-  /**
-   * An immutable map of wires between revisions. Multiple calls to this method
-   * for the same environment object must result in the same set of wires.
-   *
-   * @return the wires already defined in this environment
-   */
-  Map<Resource, Wiring> getWirings();
+  	/**
+	 * An immutable map of wirings for resources. Multiple calls to this method
+	 * for the same environment object must result in the same set of wirings.
+	 *
+	 * @return the wirings already defined in this environment
+	 */
+	Map<Resource, Wiring> getWirings();
 }

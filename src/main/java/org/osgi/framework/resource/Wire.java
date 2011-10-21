@@ -20,7 +20,7 @@ package org.osgi.framework.resource;
  * A wire connecting a {@link Capability} to a {@link Requirement}.
  *
  * @ThreadSafe
- * @version $Id: c099368f7ee5b4c485e58dbc512c9c458e5fa03c $
+ * @version $Id: 41ff1d01d23451a8c7493b138a4093dd21070c95 $
  */
 public interface Wire {
 	/**
@@ -31,33 +31,30 @@ public interface Wire {
 	Capability getCapability();
 
 	/**
-	 * Return the {@link Requirement} for this wire.
+	 * Returns the {@link Requirement} for this wire.
 	 *
 	 * @return The {@link Requirement} for this wire.
 	 */
 	Requirement getRequirement();
 
 	/**
-	 * Returns the wiring {@link Wiring#getProvidedResourceWires(String)
-	 * providing} the {@link #getCapability() capability}.
-	 *
+	 * Returns the resource providing the {@link #getCapability() capability}.
 	 * <p>
-	 * The resource referenced by the returned wiring may differ from the
-	 * resource referenced by the {@link #getCapability() capability}.
+	 * The returned resource may differ from the resource referenced by the
+	 * {@link #getCapability() capability}.
 	 *
-	 * @return The wiring providing the capability.
+	 * @return The resource providing the capability.
 	 */
-	Wiring getProviderWiring();
+	Resource getProvider();
 
 	/**
-	 * Returns the wiring who {@link Wiring#getRequiredResourceWires(String)
-	 * requires} the {@link #getCapability() capability}.
-	 *
+	 * Returns the resource who {@link #getRequirement() requires} the
+	 * {@link #getCapability() capability}.
 	 * <p>
-	 * The resource referenced by the returned wiring may differ from the
-	 * resource referenced by the {@link #getRequirement() requirement}.
+	 * The returned resource may differ from the resource referenced by the
+	 * {@link #getRequirement() requirement}.
 	 *
-	 * @return The wiring whose requirement is wired to the capability.
+	 * @return The resource who requires the capability.
 	 */
-	Wiring getRequirerWiring();
+	Resource getRequirer();
 }

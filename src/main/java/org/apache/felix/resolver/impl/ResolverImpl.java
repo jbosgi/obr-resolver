@@ -572,21 +572,21 @@ public class ResolverImpl implements FelixResolver
                 // since that requirement will be shared with any other
                 // matching dynamic imports.
                 Requirement r = wire.getRequirement();
-                if (!r.getResource().equals(wire.getRequirerWiring().getResource())
+                if (!r.getResource().equals(wire.getRequirer())
                     || ((r.getDirectives()
                             .get(ResourceConstants.REQUIREMENT_RESOLUTION_DIRECTIVE) != null)
 // TODO: RFC-112 - Need dynamic constant.
                         && r.getDirectives()
                             .get(ResourceConstants.REQUIREMENT_RESOLUTION_DIRECTIVE).equals("dynamic")))
                 {
-                    r = new HostedRequirement(wire.getRequirerWiring().getResource(), r);
+                    r = new HostedRequirement(wire.getRequirer(), r);
                 }
                 // Wrap the capability as a hosted capability if it comes
                 // from a fragment, since we will need to know the host.
                 Capability c = wire.getCapability();
-                if (!c.getResource().equals(wire.getProviderWiring().getResource()))
+                if (!c.getResource().equals(wire.getProvider()))
                 {
-                    c = new HostedCapability(wire.getProviderWiring().getResource(), c);
+                    c = new HostedCapability(wire.getProvider(), c);
                 }
                 reqs.add(r);
                 caps.add(c);
@@ -1691,7 +1691,7 @@ public class ResolverImpl implements FelixResolver
             {
                 Set<String> pkgs = calculateExportedAndReexportedPackages(
                     env,
-                    wire.getProviderWiring().getResource(),
+                    wire.getProvider(),
                     new HashSet<String>(),
                     new HashSet<Resource>());
                 pkgSpace.addAll(pkgs);
@@ -1733,7 +1733,7 @@ public class ResolverImpl implements FelixResolver
                     {
                         calculateExportedAndReexportedPackages(
                             env,
-                            wire.getProviderWiring().getResource(),
+                            wire.getProvider(),
                             pkgs,
                             cycles);
                     }
