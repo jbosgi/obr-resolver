@@ -294,31 +294,16 @@ public class ResolverImpl implements FelixResolver
 //       synthesization to the environment. The resolver just has to verify that
 //       the candidate doesn't result in a conflict with an existing package.
     public Map<Resource, List<Wire>> resolve(
-        FelixEnvironment env, Requirement dynReq, SortedSet<Capability> candidates,
+        FelixEnvironment env, Resource resource, Requirement req, SortedSet<Capability> candidates,
         Collection<? extends Resource> ondemandFragments)
     {
-        return null;
-    }
-
-    public Map<Resource, List<Wire>> resolve(
-        FelixEnvironment env, Resource revision, String pkgName,
-        Collection<? extends Resource> ondemandFragments)
-    {
-        // We can only create a dynamic import if the following
-        // conditions are met:
-        // 1. The specified revision is resolved.
-        // 2. The package in question is not already imported.
-        // 3. The package in question is not accessible via require-bundle.
-        // 4. The package in question is not exported by the revision.
-        // 5. The package in question matches a dynamic import of the revision.
-        // The following call checks all of these conditions and returns
-        // the associated dynamic import and matching capabilities.
-        Candidates allCandidates =
-            getDynamicImportCandidates(env, revision, pkgName);
-        if (allCandidates != null)
+        if (env.getWirings().containsKey(resource) && !candidates.isEmpty())
         {
+            Candidates allCandidates = new Candidates();
+            allCandidates.populateDynamic(env, resource, req, candidates);
+
             Map<Resource, List<Wire>> wireMap = new HashMap<Resource, List<Wire>>();
-            Map<Resource, Packages> revisionPkgMap = new HashMap<Resource, Packages>();
+            Map<Resource, Packages> resourcePkgMap = new HashMap<Resource, Packages>();
 
             boolean retry;
             do
@@ -348,7 +333,7 @@ public class ResolverImpl implements FelixResolver
                     {
                         rethrow = null;
 
-                        revisionPkgMap.clear();
+                        resourcePkgMap.clear();
                         m_packageSourcesCache.clear();
 
                         allCandidates = (m_usesPermutations.size() > 0)
@@ -362,8 +347,8 @@ public class ResolverImpl implements FelixResolver
                         // this case like we do for a normal resolve.
 
                         calculatePackageSpaces(
-                            env, allCandidates.getWrappedHost(revision), allCandidates,
-                            revisionPkgMap, new HashMap(), new HashSet());
+                            env, resource, allCandidates,
+                            resourcePkgMap, new HashMap(), new HashSet());
 //System.out.println("+++ PACKAGE SPACES START +++");
 //dumpRevisionPkgMap(revisionPkgMap);
 //System.out.println("+++ PACKAGE SPACES END +++");
@@ -371,8 +356,8 @@ public class ResolverImpl implements FelixResolver
                         try
                         {
                             checkPackageSpaceConsistency(
-                                env, false, allCandidates.getWrappedHost(revision),
-                                allCandidates, revisionPkgMap, new HashMap());
+                                env, false, resource,
+                                allCandidates, resourcePkgMap, new HashMap());
                         }
                         catch (ResolutionException ex)
                         {
@@ -391,14 +376,14 @@ public class ResolverImpl implements FelixResolver
                         Collection<Requirement> exReqs = rethrow.getUnresolvedRequirements();
                         Requirement faultyReq = ((exReqs == null) || exReqs.isEmpty())
                             ? null : exReqs.iterator().next();
-                        Resource faultyRevision = null;
+                        Resource faultyResource = null;
                         if (faultyReq instanceof HostedRequirement)
                         {
-                            faultyRevision =
+                            faultyResource =
                                 ((HostedRequirement) faultyReq)
                                     .getOriginalRequirement().getResource();
                         }
-                        if (ondemandFragments.remove(faultyRevision))
+                        if (ondemandFragments.remove(faultyResource))
                         {
                             retry = true;
                         }
@@ -412,7 +397,7 @@ public class ResolverImpl implements FelixResolver
                     else
                     {
                         wireMap = populateDynamicWireMap(
-                            env, revision, pkgName, revisionPkgMap, wireMap, allCandidates);
+                            env, resource, req, resourcePkgMap, wireMap, allCandidates);
                         return wireMap;
                     }
                 }
@@ -427,118 +412,6 @@ public class ResolverImpl implements FelixResolver
         }
 
         return null;
-    }
-
-    private static Candidates getDynamicImportCandidates(
-        Environment env, Resource resource, String pkgName)
-    {
-// TODO: RFC-112 - Re-think dynamic import support, maybe just handle it all
-//       in the framework environment by locking down requirements.
-        return null;
-/*
-        // Unresolved revisions cannot dynamically import, nor can the default
-        // package be dynamically imported.
-        Wiring wiring = env.getWirings().get(resource);
-        if ((wiring == null) || pkgName.length() == 0)
-        {
-            return null;
-        }
-
-        // If the revision doesn't have dynamic imports, then just return
-        // immediately.
-        List<Requirement> dynamics =
-            Util.getDynamicRequirements(wiring.getRequirements(null));
-        if ((dynamics == null) || dynamics.isEmpty())
-        {
-            return null;
-        }
-
-        // If the revision exports this package, then we cannot
-        // attempt to dynamically import it.
-        for (Capability cap : wiring.getCapabilities(null))
-        {
-            if (cap.getNamespace().equals(ResourceConstants.WIRING_PACKAGE_NAMESPACE)
-                && cap.getAttributes().get(ResourceConstants.WIRING_PACKAGE_NAMESPACE).equals(pkgName))
-            {
-                return null;
-            }
-        }
-
-        // If this revision already imports or requires this package, then
-        // we cannot dynamically import it.
-        boolean hasPackage;
-        if (wiring instanceof FelixWiring)
-        {
-            hasPackage = ((FelixWiring) wiring).hasPackage(pkgName);
-        }
-        else
-        {
-            hasPackage = calculatePackageSpace(env, resource, wiring).contains(pkgName);
-        }
-        if (hasPackage)
-        {
-            return null;
-        }
-
-        // Determine if any providers of the package exist.
-        Map<String, Object> attrs = Collections.singletonMap(
-            ResourceConstants.WIRING_PACKAGE_NAMESPACE, (Object) pkgName);
-        RequirementImpl req = new RequirementImpl(
-            resource,
-            ResourceConstants.WIRING_PACKAGE_NAMESPACE,
-            Collections.EMPTY_MAP,
-            attrs);
-        SortedSet<Capability> candidates = env.getCandidates(req, false);
-
-        // Try to find a dynamic requirement that matches the capabilities.
-        Requirement dynReq = null;
-        for (int dynIdx = 0;
-            (candidates.size() > 0) && (dynReq == null) && (dynIdx < dynamics.size());
-            dynIdx++)
-        {
-            for (Iterator<Capability> itCand = candidates.iterator();
-                (dynReq == null) && itCand.hasNext(); )
-            {
-                Capability cap = itCand.next();
-                if (CapabilitySet.matches(
-                    (CapabilityImpl) cap,
-                    ((RequirementImpl) dynamics.get(dynIdx)).getFilter()))
-                {
-                    dynReq = dynamics.get(dynIdx);
-                }
-            }
-        }
-
-        // If we found a matching dynamic requirement, then filter out
-        // any candidates that do not match it.
-        if (dynReq != null)
-        {
-            for (Iterator<Capability> itCand = candidates.iterator();
-                itCand.hasNext(); )
-            {
-                Capability cap = itCand.next();
-                if (!CapabilitySet.matches(
-                    (CapabilityImpl) cap, dynReq.getFilter()))
-                {
-                    itCand.remove();
-                }
-            }
-        }
-        else
-        {
-            candidates.clear();
-        }
-
-        Candidates allCandidates = null;
-
-        if (candidates.size() > 0)
-        {
-            allCandidates = new Candidates();
-            allCandidates.populateDynamic(env, resource, dynReq, candidates);
-        }
-
-        return allCandidates;
-*/
     }
 
     private void calculatePackageSpaces(
@@ -1615,7 +1488,7 @@ public class ResolverImpl implements FelixResolver
     }
 
     private static Map<Resource, List<Wire>> populateDynamicWireMap(
-        Environment env, Resource resource, String pkgName,
+        Environment env, Resource resource, Requirement dynReq,
         Map<Resource, Packages> revisionPkgMap,
         Map<Resource, List<Wire>> wireMap, Candidates allCandidates)
     {
@@ -1623,46 +1496,23 @@ public class ResolverImpl implements FelixResolver
 
         List<Wire> packageWires = new ArrayList<Wire>();
 
-        Requirement dynReq = null;
-        Capability dynCand = null;
+        // Get the candidates for the current dynamic requirement.
+        SortedSet<Capability> candCaps = allCandidates.getCandidates(dynReq);
+        // Record the dynamic candidate.
+        Capability dynCand = candCaps.first();
 
-        for (Requirement req
-            : Util.getDynamicRequirements(env.getWirings().get(resource).getResourceRequirements(null)))
+        if (!env.getWirings().containsKey(dynCand.getResource()))
         {
-            // Get the candidates for the current dynamic requirement.
-            SortedSet<Capability> candCaps = allCandidates.getCandidates(req);
-            // Optional requirements may not have any candidates.
-            if ((candCaps == null) || candCaps.isEmpty())
-            {
-                continue;
-            }
-
-            // Record the dynamic requirement.
-            dynReq = req;
-            dynCand = candCaps.first();
-
-            // Can only dynamically import one at a time, so break
-            // out of the loop after the first.
-            break;
+            populateWireMap(env, dynCand.getResource(), revisionPkgMap,
+                wireMap, allCandidates);
         }
 
-        if (dynReq != null)
-        {
-            if (!env.getWirings().containsKey(dynCand.getResource()))
-            {
-                populateWireMap(env, dynCand.getResource(), revisionPkgMap,
-                    wireMap, allCandidates);
-            }
-
-            Map<String, Object> attrs = new HashMap(1);
-            attrs.put(ResourceConstants.WIRING_PACKAGE_NAMESPACE, pkgName);
-            packageWires.add(
-                new WireImpl(
-                    resource,
-                    dynReq,
-                    getActualResource(dynCand.getResource()),
-                    getActualCapability(dynCand)));
-        }
+        packageWires.add(
+            new WireImpl(
+                resource,
+                dynReq,
+                getActualResource(dynCand.getResource()),
+                getActualCapability(dynCand)));
 
         wireMap.put(resource, packageWires);
 

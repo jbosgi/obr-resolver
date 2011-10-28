@@ -37,6 +37,7 @@ public interface FelixResolver extends Resolver
         Collection<? extends Resource> ondemandFragments);
     Map<Resource, List<Wire>> resolve(
         FelixEnvironment env,
+        Resource resource,
         Requirement dynReq,
         SortedSet<Capability> cands,
         Collection<? extends Resource> ondemandFragments);
