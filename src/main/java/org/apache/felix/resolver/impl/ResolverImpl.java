@@ -1409,14 +1409,14 @@ public class ResolverImpl implements FelixResolver
         Map<Resource, List<Wire>> wireMap,
         Candidates allCandidates)
     {
-        Resource unwrappedRevision = getActualResource(resource);
-        if (!env.getWirings().containsKey(resource)
-            && !wireMap.containsKey(unwrappedRevision))
+        Resource unwrappedResource = getActualResource(resource);
+        if (!env.getWirings().containsKey(unwrappedResource)
+            && !wireMap.containsKey(unwrappedResource))
         {
-            wireMap.put(unwrappedRevision, (List<Wire>) Collections.EMPTY_LIST);
+            wireMap.put(unwrappedResource, (List<Wire>) Collections.EMPTY_LIST);
 
             List<Wire> packageWires = new ArrayList<Wire>();
-            List<Wire> Wires = new ArrayList<Wire>();
+            List<Wire> bundleWires = new ArrayList<Wire>();
             List<Wire> capabilityWires = new ArrayList<Wire>();
 
             for (Requirement req : resource.getRequirements(null))
@@ -1435,7 +1435,7 @@ public class ResolverImpl implements FelixResolver
                         }
                         Packages candPkgs = revisionPkgMap.get(cand.getResource());
                         Wire wire = new WireImpl(
-                            unwrappedRevision,
+                            unwrappedResource,
                             getActualRequirement(req),
                             getActualResource(cand.getResource()),
                             getActualCapability(cand));
@@ -1445,7 +1445,7 @@ public class ResolverImpl implements FelixResolver
                         }
                         else if (req.getNamespace().equals(ResourceConstants.WIRING_BUNDLE_NAMESPACE))
                         {
-                            Wires.add(wire);
+                            bundleWires.add(wire);
                         }
                         else
                         {
@@ -1456,9 +1456,9 @@ public class ResolverImpl implements FelixResolver
             }
 
             // Combine package wires with require wires last.
-            packageWires.addAll(Wires);
+            packageWires.addAll(bundleWires);
             packageWires.addAll(capabilityWires);
-            wireMap.put(unwrappedRevision, packageWires);
+            wireMap.put(unwrappedResource, packageWires);
 
             // Add host wire for any fragments.
             if (resource instanceof HostResource)
@@ -1477,8 +1477,8 @@ public class ResolverImpl implements FelixResolver
                             getActualResource(fragment),
                             fragment.getRequirements(
                                 ResourceConstants.WIRING_HOST_NAMESPACE).get(0),
-                            unwrappedRevision,
-                            unwrappedRevision.getCapabilities(
+                            unwrappedResource,
+                            unwrappedResource.getCapabilities(
                                 ResourceConstants.WIRING_HOST_NAMESPACE).get(0)));
                 }
             }
