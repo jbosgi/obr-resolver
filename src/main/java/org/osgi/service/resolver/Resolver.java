@@ -104,7 +104,7 @@ public interface Resolver {
    * @throws NullPointerException
    *           if environment is null
    */
-	Map<Resource, List<Wire>> resolve(FelixEnvironment environment,
+	Map<Resource, List<Wire>> resolve(Environment environment,
 			Collection<? extends Resource> mandatoryResources,
 			Collection<? extends Resource> optionalResources)
 			throws ResolutionException;

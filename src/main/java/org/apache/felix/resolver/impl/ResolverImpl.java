@@ -72,11 +72,11 @@ public class ResolverImpl implements FelixResolver
     }
 
     public Map<Resource, List<Wire>> resolve(
-        FelixEnvironment env,
+        Environment env,
         Collection<? extends Resource> mandatoryRevisions,
         Collection<? extends Resource> optionalRevisions)
     {
-        return resolve(env, mandatoryRevisions, optionalRevisions, Collections.EMPTY_SET);
+        return resolve((FelixEnvironment)env, mandatoryRevisions, optionalRevisions, Collections.EMPTY_SET);
     }
 
     public Map<Resource, List<Wire>> resolve(
@@ -87,6 +87,13 @@ public class ResolverImpl implements FelixResolver
     {
         Map<Resource, List<Wire>> wireMap = new HashMap<Resource, List<Wire>>();
         Map<Resource, Packages> revisionPkgMap = new HashMap<Resource, Packages>();
+        
+        if (mandatoryRevisions == null)
+            mandatoryRevisions = Collections.emptySet();
+        if (optionalRevisions == null)
+            optionalRevisions = Collections.emptySet();
+        if (ondemandFragments == null)
+            ondemandFragments = Collections.emptySet();
 
         boolean retry;
         do
